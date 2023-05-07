@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/root"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <TextView
+        android:id="@+id/errorMessage"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/chat_hor_margin"
+        android:layout_marginEnd="8dp"
+        android:paddingBottom="12dp"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        app:layout_constraintEnd_toStartOf="@id/warningIcon"
+        app:layout_constraintHorizontal_weight="1"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/warningIcon"
+        android:layout_width="@dimen/oai_ic_size"
+        android:layout_height="@dimen/oai_ic_size"
+        android:layout_marginEnd="@dimen/chat_hor_margin"
+        android:src="@android:drawable/stat_sys_warning"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/errorMessage"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tryAgainButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/suggestion_bg"
+        android:text="@string/try_again"
+        android:drawablePadding="12dp"
+        android:paddingVertical="8dp"
+        android:paddingEnd="32dp"
+        android:paddingStart="16dp"
+        app:drawableStartCompat="@android:drawable/ic_menu_revert"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/errorMessage"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body2"/>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
