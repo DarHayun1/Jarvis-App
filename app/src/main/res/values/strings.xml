@@ -12,4 +12,5 @@
     <string name="try_again">Try again</string>
     <string name="generic_error_message">Unknown error occured</string>
     <string name="suggestions_prompt">How can I help next?</string>
+    <string name="my_accessibility_service_description">Jarvis helper to see the screen</string>
 </resources>

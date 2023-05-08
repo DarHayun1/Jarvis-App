@@ -13,7 +13,8 @@ internal class ChatRepositoryFactory @Inject constructor(
     private val googleResultsUseCase: GoogleResultsUseCase,
     private val requestsManager: ChatRequestsManager,
     private val appScope: AppScope,
-    private val googleRepository: GoogleSearchRepository
+    private val googleRepository: GoogleSearchRepository,
+    @ApplicationContext private val context: Context
 ) {
     fun create(chatId: Int) = ChatRepository(
         askAnythingUseCase,
@@ -21,5 +22,6 @@ internal class ChatRepositoryFactory @Inject constructor(
         requestsManager,
         appScope,
         googleRepository,
+        context
     )
 }

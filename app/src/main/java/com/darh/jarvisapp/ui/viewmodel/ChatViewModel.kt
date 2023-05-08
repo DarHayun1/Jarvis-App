@@ -47,7 +47,7 @@ internal class AssistantVM {
 
     sealed class Event {
         data class OnActionSelected(val type: AssistanceType) : Event()
-        data class OnNewInput(val input: String, val enhancedQuestion: Boolean = false) : Event()
+        data class OnNewInput(val input: String, val isTask: Boolean = false) : Event()
         data class OnTryAgain(val errorItem: AssistantErrorItem) : Event()
         object OnStopGeneration : Event()
         object OnClearChat : Event()

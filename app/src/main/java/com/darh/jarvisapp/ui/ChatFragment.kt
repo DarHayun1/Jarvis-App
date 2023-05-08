@@ -82,7 +82,7 @@ class ChatFragment : Fragment() {
 
         binding.googleButton.setOnClickListener {
             val message = binding.messageInput.query.toString()
-            viewModel.obtainEvent(AssistantVM.Event.OnNewInput(message, enhancedQuestion = true))
+            viewModel.obtainEvent(AssistantVM.Event.OnNewInput(message, isTask = true))
             binding.messageInput.setQuery("", false)
             binding.messageInput.clearFocus()
         }

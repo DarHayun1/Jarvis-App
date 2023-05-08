@@ -1,5 +1,6 @@
 package com.darh.jarvisapp.chat.repo
 
+import android.content.Context
 import com.darh.jarvisapp.BuildConfig
 import com.darh.jarvisapp.R
 import com.darh.jarvisapp.api.CompletionState
@@ -17,6 +18,7 @@ import com.darh.jarvisapp.ui.adapter.AssistantKeyConceptsItem
 import com.darh.jarvisapp.ui.adapter.AssistantVH
 import com.darh.jarvisapp.ui.viewmodel.AssistanceType
 import com.darh.jarvisapp.ui.viewmodel.AssistantVM.*
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -28,7 +30,8 @@ internal class ChatRepository(
     private val googleResultsUseCase: GoogleResultsUseCase,
     private val requestsManager: ChatRequestsManager,
     private val appScope: AppScope,
-    private val googleRepository: GoogleSearchRepository
+    private val googleRepository: GoogleSearchRepository,
+    private val context: Context
 ) {
 
     private val assistantHistory = ChatHistory()
@@ -289,8 +292,8 @@ internal class ChatRepository(
             )
         launchStreamRequest(
             responseFlow = {
-                if (event.enhancedQuestion) {
-                    askAnythingUseCase.getEnhancedAnswer(input, assistantHistory)
+                if (event.isTask) {
+                    askAnythingUseCase.executeTask(input, context)
                 } else {
                     askAnythingUseCase.get(input, assistantHistory)
                 }
