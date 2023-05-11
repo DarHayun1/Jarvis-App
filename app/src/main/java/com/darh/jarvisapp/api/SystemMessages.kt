@@ -5,18 +5,24 @@ import com.darh.jarvisapp.ui.ChatRole
 
 object SystemMessages {
 
-    fun systemSetup() = listOf(
+    fun chatSystemSetup() = listOf(
         ChatMessage(
             role = ChatRole.System,
-            content = StructuredResponse.systemSetup()
+            content = StructuredChatResponse.systemSetup()
         )
     )
 
-    fun structureMethod(requestedFields: List<String>) = listOf(
-        ChatMessage(
+    fun chatStructureMethod(requestedFields: List<String>): ChatMessage {
+        val fields = listOf(StructuredChatResponse.PROMPT_FIELD).plus(requestedFields)
+        .plus(listOf(StructuredChatResponse.ASK_GOOGLE_FIELD, StructuredChatResponse.QUESTION_SUMMARY_FIELD))
+        return ChatMessage(
             role = ChatRole.System,
-            content = StructuredResponse.structureSetup(requestedFields)
+            content = StructuredChatResponse.structureSetup(fields)
         )
-    )
+    }
+
+    fun agentStructureMethod(requestedFields: List<String>): ChatMessage {
+
+    }
 
 }

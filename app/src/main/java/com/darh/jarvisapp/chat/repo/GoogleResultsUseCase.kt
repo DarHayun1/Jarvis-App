@@ -2,8 +2,8 @@ package com.darh.jarvisapp.chat.repo
 
 import com.darh.jarvisapp.api.CompletionState
 import com.darh.jarvisapp.api.OPEN_AI
-import com.darh.jarvisapp.api.StructuredResponse
-import com.darh.jarvisapp.chat.ChatRemoteDataSource
+import com.darh.jarvisapp.api.StructuredChatResponse
+import com.darh.jarvisapp.chat.CompletionRemoteDataSource
 import com.darh.jarvisapp.google.SearchResultResponse
 import com.darh.jarvisapp.page_reader.WebPageReader
 import com.darh.jarvisapp.ui.ChatMessage
@@ -11,11 +11,11 @@ import com.darh.jarvisapp.ui.ChatRole
 import kotlinx.coroutines.flow.Flow
 import timber.log.Timber
 import javax.inject.Inject
-import kotlin.math.min
 
 internal class GoogleResultsUseCase @Inject constructor(
-    private val dataSource: ChatRemoteDataSource,
-    private val webPageReader: WebPageReader
+    private val dataSource: CompletionRemoteDataSource,
+    private val webPageReader: WebPageReader,
+    private val structureFormatter: CompletionRequestFormatter
 ) {
     /**
     fun getAnswerFromSearchResults(
@@ -151,10 +151,12 @@ fun getAnswerFromSummary(
         )
     )
 
+    val requestFormat = RequestFormat.EnhancedChat(assistantHistory.messages,)
+
     return dataSource.getCompletionsStream(
-        messages = assistantHistory.messages,
+        messages = structureFormatter.format(requestFormat),
         requestedFields = listOf(
-            StructuredResponse.NEXT_ACTION_FIELD
+            StructuredChatResponse.NEXT_ACTION_FIELD
         )
     ) {}
 }

@@ -6,7 +6,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 @Keep
-data class StructuredResponse(
+data class StructuredChatResponse(
     @SerializedName(PROMPT_FIELD)
     val prompt: String? = null,
     @SerializedName(NEXT_ACTION_FIELD)
@@ -19,7 +19,7 @@ data class StructuredResponse(
 
     companion object {
 
-        private const val PROMPT_FIELD = "prompt"
+        internal const val PROMPT_FIELD = "prompt"
         const val NEXT_ACTION_FIELD = "next_actions"
 
         //        private const val ASSISTANT_ACTIONS = "assistant_actions"

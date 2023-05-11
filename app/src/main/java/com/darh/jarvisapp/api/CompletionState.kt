@@ -17,6 +17,6 @@ sealed class CompletionState {
         }
     }
 
-    data class Complete(val rawResponse: String, val structuredResponse: StructuredResponse) :
+    data class Complete(val rawResponse: String, val structuredResponse: StructuredChatResponse) :
         CompletionState()
 }

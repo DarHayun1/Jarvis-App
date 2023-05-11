@@ -5,8 +5,8 @@ import com.darh.jarvisapp.BuildConfig
 import com.darh.jarvisapp.R
 import com.darh.jarvisapp.api.CompletionState
 import com.darh.jarvisapp.api.OPEN_AI
-import com.darh.jarvisapp.api.StructuredResponse
-import com.darh.jarvisapp.api.StructuredResponse.Companion.NEXT_ACTION_FIELD
+import com.darh.jarvisapp.api.StructuredChatResponse
+import com.darh.jarvisapp.api.StructuredChatResponse.Companion.NEXT_ACTION_FIELD
 import com.darh.jarvisapp.di.AppScope
 import com.darh.jarvisapp.google.GoogleSearchRepository
 import com.darh.jarvisapp.google.SearchResultResponse
@@ -18,7 +18,6 @@ import com.darh.jarvisapp.ui.adapter.AssistantKeyConceptsItem
 import com.darh.jarvisapp.ui.adapter.AssistantVH
 import com.darh.jarvisapp.ui.viewmodel.AssistanceType
 import com.darh.jarvisapp.ui.viewmodel.AssistantVM.*
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -223,13 +222,13 @@ internal class ChatRepository(
         header: String? = null,
         triggerEvent: Event,
         persistedItem: AssistantUiItem? = null,
-        onCompletion: (StructuredResponse?) -> Unit = {}
+        onCompletion: (StructuredChatResponse?) -> Unit = {}
     ) {
         var messageBuffer = ""
         val flowId = UUID.randomUUID().toString()
 
         val textFlow = MutableSharedFlow<AssistantDynamicTextItem>(replay = 1)
-        var response: StructuredResponse? = null
+        var response: StructuredChatResponse? = null
 
         requestsManager.launchRequest(
             requestBlock = {
@@ -325,7 +324,7 @@ internal class ChatRepository(
         val textItem = AssistantDynamicTextItem(tempBuffer, flowId, header)
         Timber.tag(OPEN_AI).i("state $state")
 
-        var response: StructuredResponse? = null
+        var response: StructuredChatResponse? = null
 
         when (state) {
             is CompletionState.Typing -> {
@@ -446,4 +445,4 @@ internal class ChatRepository(
 class StopGenerationException : CancellationException()
 object StopSessionException : CancellationException()
 
-private data class ResponseStateSnapshot(val tempBuffer: String, val response: StructuredResponse?)
+private data class ResponseStateSnapshot(val tempBuffer: String, val response: StructuredChatResponse?)

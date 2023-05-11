@@ -58,7 +58,7 @@ class StructuredCompletionsMapper @Inject constructor() {
                         .d("getCompletionFlow onCompletion. response:\n$stringBuffer")
                     val structuredResponse = Gson().fromJson(
                         stringBuffer.tryTrimJsonSurroundings(),
-                        StructuredResponse::class.java
+                        StructuredChatResponse::class.java
                     )
                     emit(CompletionState.Complete(stringBuffer, structuredResponse))
                 }

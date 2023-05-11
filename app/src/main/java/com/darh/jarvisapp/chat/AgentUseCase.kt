@@ -1,11 +1,10 @@
-package com.darh.jarvisapp.chat.repo
+package com.darh.jarvisapp.chat
 
 import android.content.Context
 import com.darh.jarvisapp.accessibility.ScreenInteractionService
 import com.darh.jarvisapp.api.CompletionState
 import com.darh.jarvisapp.api.OPEN_AI
 import com.darh.jarvisapp.api.StructuredChatResponse
-import com.darh.jarvisapp.chat.CompletionRemoteDataSource
 import com.darh.jarvisapp.ui.ChatMessage
 import com.darh.jarvisapp.ui.ChatRole
 import kotlinx.coroutines.flow.Flow
@@ -13,9 +12,8 @@ import kotlinx.coroutines.flow.flow
 import timber.log.Timber
 import javax.inject.Inject
 
-internal class AskAnythingUseCase @Inject constructor(
+internal class AgentUseCase @Inject constructor(
     private val dataSource: CompletionRemoteDataSource,
-    private val structureFormatter: CompletionRequestFormatter
 ) {
 
     fun get(
@@ -26,9 +24,8 @@ internal class AskAnythingUseCase @Inject constructor(
 //        connectionData.requireNetwork("AskAnythingUseCase")
         assistantHistory.add(ChatMessage(ChatRole.User, userInput))
 
-        val requestFormat = RequestFormat.EnhancedChat(assistantHistory.messages,)
         return dataSource.getCompletionsStream(
-            messages = structureFormatter.format(requestFormat),
+            messages = assistantHistory.messages,
             requestedFields = listOf(
                 StructuredChatResponse.NEXT_ACTION_FIELD
             )

@@ -14,7 +14,7 @@ import javax.inject.Singleton
 import kotlin.time.Duration.Companion.milliseconds
 
 @Singleton
-class ChatRemoteDataSource @Inject constructor(
+class CompletionRemoteDataSource @Inject constructor(
     private val chatCompletionAPI: ChatCompletionAPI,
     private val structuredCompletionsMapper: StructuredCompletionsMapper,
     private val appScope: AppScope
@@ -60,7 +60,7 @@ class ChatRemoteDataSource @Inject constructor(
                 rawResponse,
                 Gson().fromJson(
                     rawResponse.tryTrimJsonSurroundings(),
-                    StructuredResponse::class.java
+                    StructuredChatResponse::class.java
                 )
             )
         } ?: throw (result.exceptionOrNull() ?: IllegalStateException("No choices received"))
@@ -108,14 +108,4 @@ class ChatRemoteDataSource @Inject constructor(
             .e(error, "Completion stream error after ${elapsed.inWholeSeconds} seconds")
     }
 
-}
-
-private fun List<ChatMessage>.injectStructured(requestedFields: List<String>): List<ChatMessage> {
-    val messages = this.toMutableList()
-    val last = messages[size - 1]
-    messages[size - 1] =
-        last.copy(content = last.content.plus("\n\n(You must respond in the Json schema provided by the system"))
-    return SystemMessages.systemSetup()
-        .plus(messages)
-        .plus(SystemMessages.structureMethod(requestedFields))
 }

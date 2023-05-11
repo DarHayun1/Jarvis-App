@@ -21,5 +21,5 @@ interface ChatCompletionAPI {
 
 data class AssistantResponse(
     val rawResponse: String,
-    val structured: StructuredResponse?
+    val structured: StructuredChatResponse?
 )
