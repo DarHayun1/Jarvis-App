@@ -1,6 +1,8 @@
 package com.darh.jarvisapp.chat.repo
 
 import android.content.Context
+import com.darh.jarvisapp.chat.Agent
+import com.darh.jarvisapp.chat.AgentUseCase
 import com.darh.jarvisapp.google.GoogleSearchRepository
 import com.darh.jarvisapp.di.AppScope
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -11,6 +13,7 @@ import javax.inject.Singleton
 internal class ChatRepositoryFactory @Inject constructor(
     private val askAnythingUseCase: AskAnythingUseCase,
     private val googleResultsUseCase: GoogleResultsUseCase,
+    private val agent: Agent,
     private val requestsManager: ChatRequestsManager,
     private val appScope: AppScope,
     private val googleRepository: GoogleSearchRepository,
@@ -19,6 +22,7 @@ internal class ChatRepositoryFactory @Inject constructor(
     fun create(chatId: Int) = ChatRepository(
         askAnythingUseCase,
         googleResultsUseCase,
+        agent,
         requestsManager,
         appScope,
         googleRepository,

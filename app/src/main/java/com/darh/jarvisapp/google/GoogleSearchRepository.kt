@@ -1,11 +1,13 @@
 package com.darh.jarvisapp.google
 
+import com.darh.jarvisapp.api.OPEN_AI
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Query
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -29,6 +31,7 @@ class GoogleSearchRepository @Inject constructor() {
 
     suspend fun search(query: String, apiKey: String, searchEngineId: String): SearchResultResponse {
         return withContext(Dispatchers.IO) {
+            Timber.tag(OPEN_AI).v("Executing search. apiKey: $apiKey, searchEngineId: $searchEngineId, searchQuery: $query")
              googleSearchApi.getSearchResults(apiKey, searchEngineId, query)
         }
     }

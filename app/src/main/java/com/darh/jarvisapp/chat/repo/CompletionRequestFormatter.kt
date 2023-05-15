@@ -8,21 +8,23 @@ import javax.inject.Singleton
 @Singleton
 class CompletionRequestFormatter @Inject constructor() {
 
-    fun format(format: RequestFormat): List<ChatMessage>{
-        when (format){
+    fun format(format: RequestFormat): List<ChatMessage> {
+        return when (format) {
             is RequestFormat.EnhancedChat -> formatChat(format)
             is RequestFormat.ThoughtsAgent -> formatThoughtsAgent(format)
         }
     }
 
     private fun formatThoughtsAgent(format: RequestFormat.ThoughtsAgent): List<ChatMessage> {
-        val messages = format.history.toMutableList()
-        val last = messages[messages.size - 1]
-        messages[messages.size - 1] =
-            last.copy(content = last.content.plus("\n\n(You must respond in the Json schema provided by the system"))
-        return SystemMessages.chatSystemSetup()
+        val messages = format.history?.toMutableList() ?: mutableListOf()
+        if (messages.isNotEmpty()) {
+            val last = messages[messages.size - 1]
+            messages[messages.size - 1] =
+                last.copy(content = last.content.plus("\n\n(You must respond in the Json schema provided by the system"))
+        }
+        return SystemMessages.agentSystemSetup()
             .plus(messages)
-            .plus(SystemMessages.agentStructureMethod(format.requestedFields))
+            .plus(SystemMessages.agentStructureMethod(format.input))
     }
 
     private fun formatChat(format: RequestFormat.EnhancedChat): List<ChatMessage> {
@@ -37,7 +39,9 @@ class CompletionRequestFormatter @Inject constructor() {
 
 }
 
-sealed class RequestFormat{
-    data class EnhancedChat(val messages: List<ChatMessage>, val requestedFields: List<String>) : RequestFormat()
-    data class ThoughtsAgent(val history: List<ChatMessage>, val input: String) : RequestFormat()
+sealed class RequestFormat {
+    data class EnhancedChat(val messages: List<ChatMessage>, val requestedFields: List<String>) :
+        RequestFormat()
+
+    data class ThoughtsAgent(val history: List<ChatMessage>?, val input: String) : RequestFormat()
 }

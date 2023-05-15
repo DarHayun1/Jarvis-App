@@ -32,7 +32,6 @@ class OpenAILibraryImpl @Inject constructor() : ChatCompletionAPI {
 
     @Throws(Exception::class)
     override suspend fun getCompletion(model: String, messages: List<ChatMessage>): String {
-        Timber.tag(OPEN_AI).d("getCompletion $messages")
         val result = runCatching {
             openAI.chatCompletion(
                 ChatCompletionRequest(
@@ -41,7 +40,7 @@ class OpenAILibraryImpl @Inject constructor() : ChatCompletionAPI {
                 )
             )
         }
-        Timber.tag(OPEN_AI).d("getCompletion $result")
+        Timber.tag(OPEN_AI).d("getCompletion result: $result")
 
         val rawResponse = result.getOrNull()?.choices?.firstOrNull()?.message?.content
         return rawResponse ?: throw (result.exceptionOrNull()
@@ -77,7 +76,6 @@ private fun List<ChatMessage>.mapToRequestMessages(): List<com.aallam.openai.api
             content = it.content
         )
     }.also {
-        Timber.tag(OPEN_AI).i("sent messages: ${it.joinToString(separator = "\n")}")
     }
 }
 

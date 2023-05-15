@@ -1,5 +1,6 @@
 package com.darh.jarvisapp.ui.viewmodel
 
+import android.content.Context
 import android.os.Parcelable
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -47,7 +48,7 @@ internal class AssistantVM {
 
     sealed class Event {
         data class OnActionSelected(val type: AssistanceType) : Event()
-        data class OnNewInput(val input: String, val isTask: Boolean = false) : Event()
+        data class OnNewInput(val input: String, val isTask: Boolean = false, val context: Context? = null) : Event()
         data class OnTryAgain(val errorItem: AssistantErrorItem) : Event()
         object OnStopGeneration : Event()
         object OnClearChat : Event()

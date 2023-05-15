@@ -7,6 +7,7 @@ import com.darh.jarvisapp.api.CompletionState
 import com.darh.jarvisapp.api.OPEN_AI
 import com.darh.jarvisapp.api.StructuredChatResponse
 import com.darh.jarvisapp.api.StructuredChatResponse.Companion.NEXT_ACTION_FIELD
+import com.darh.jarvisapp.chat.Agent
 import com.darh.jarvisapp.di.AppScope
 import com.darh.jarvisapp.google.GoogleSearchRepository
 import com.darh.jarvisapp.google.SearchResultResponse
@@ -17,16 +18,27 @@ import com.darh.jarvisapp.ui.adapter.AssistantErrorItem
 import com.darh.jarvisapp.ui.adapter.AssistantKeyConceptsItem
 import com.darh.jarvisapp.ui.adapter.AssistantVH
 import com.darh.jarvisapp.ui.viewmodel.AssistanceType
-import com.darh.jarvisapp.ui.viewmodel.AssistantVM.*
+import com.darh.jarvisapp.ui.viewmodel.AssistantVM.Action
+import com.darh.jarvisapp.ui.viewmodel.AssistantVM.Event
+import com.darh.jarvisapp.ui.viewmodel.AssistantVM.State
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.util.*
+import java.util.UUID
 
 internal class ChatRepository(
     private val askAnythingUseCase: AskAnythingUseCase,
     private val googleResultsUseCase: GoogleResultsUseCase,
+    private val agent: Agent,
     private val requestsManager: ChatRequestsManager,
     private val appScope: AppScope,
     private val googleRepository: GoogleSearchRepository,
@@ -51,8 +63,9 @@ internal class ChatRepository(
             is Event.OnActionSelected -> onActionSelected(event)
             is Event.OnNewInput -> onNewUserInput(
                 event,
-                includeUserMessage = true
+                isTask = true
             )
+
             is Event.OnTryAgain -> onTryAgain(event)
             Event.OnClearChat -> onClearChat()
         }
@@ -75,21 +88,27 @@ internal class ChatRepository(
             }
             Timber.tag(OPEN_AI).i("google results: $result")
             result.getOrNull()?.items?.let { searchResults ->
-                var resultIndex :Int? = null
+                var resultIndex: Int? = null
                 requestsManager.launchRequest(
                     requestBlock = {
                         resultIndex = googleResultsUseCase.getIndexFromSearchResults(
-                            searchResults, questionSummary ?: query, assistantHistory
+                            searchResults, questionSummary ?: query
                         )
                     },
                     onError = {
                         Timber.tag(OPEN_AI).e(it, "handleGoogleResultRequest failed")
                     },
                     onCompletion = {
-                        Timber.tag(OPEN_AI).d("googleSearch onCompletion. e:[$it], resultIndex: [$resultIndex]")
+                        Timber.tag(OPEN_AI)
+                            .d("googleSearch onCompletion. e:[$it], resultIndex: [$resultIndex]")
                         handleRequestCompletion(it, listOf())
                         resultIndex?.let { index ->
-                            handleGoogleResultRequest(index, searchResults, userMessage, triggerEvent)
+                            handleGoogleResultRequest(
+                                index,
+                                searchResults,
+                                userMessage,
+                                triggerEvent
+                            )
                         }
                     }
                 )
@@ -119,7 +138,8 @@ internal class ChatRepository(
                     Timber.tag(OPEN_AI).e(it, "handleGoogleResultRequest failed")
                 },
                 onCompletion = {
-                    Timber.tag(OPEN_AI).d("handleGoogleResultRequest onCompletion. e:[$it], summaryResult: [$summaryResult]")
+                    Timber.tag(OPEN_AI)
+                        .d("handleGoogleResultRequest onCompletion. e:[$it], summaryResult: [$summaryResult]")
                     handleRequestCompletion(it, listOf())
                     summaryResult?.let { summary ->
                         launchStreamRequest(
@@ -158,7 +178,7 @@ internal class ChatRepository(
     private fun onActionSelected(event: Event.OnActionSelected) {
         when (event.type) {
             is AssistanceType.ResponseSuggestion ->
-                onNewUserInput(Event.OnNewInput(event.type.text))
+                onNewUserInput(Event.OnNewInput(event.type.text,))
         }
     }
 
@@ -215,6 +235,48 @@ internal class ChatRepository(
             obtainEvent(event.errorItem.event)
         }
         // TODO: Analytics, Any other logic?
+    }
+
+    private fun launchAgentRequest(
+        responseFlow: suspend () -> Flow<String>,
+        triggerEvent: Event,
+        persistedItem: AssistantUiItem? = null
+    ) {
+        var response: StructuredChatResponse? = null
+        val messageId = UUID.randomUUID().toString()
+
+        requestsManager.launchRequest(
+            requestBlock = {
+                updateState(
+                    newItems = listOfNotNull(persistedItem),
+                    isGenerating = true
+                )
+                val flow = responseFlow()
+                flow.onCompletion {
+                    updateState(isGenerating = false)
+                }
+                flow.collect { state ->
+                    updateState(newItems = listOf(AssistantDynamicTextItem(state)))
+                }
+            },
+            onError = { e ->
+                Timber.tag(OPEN_AI).e(e, "launchRequestStream failed, e: [$e]")
+                val latestTextItem = AssistantDynamicTextItem(e.message ?: "", messageId)
+                handleRequestException(
+                    e,
+                    triggerEvent,
+                    listOfNotNull(latestTextItem.takeUnless { latestTextItem.content.isBlank() }),
+                    messageId
+                )
+            },
+            onCompletion = { e ->
+                Timber.tag(OPEN_AI).d("onCompletion. e:[$e], response: [$response]")
+                handleRequestCompletion(
+                    e, listOf(AssistantDynamicTextItem(e?.message ?: "")),
+                    e?.message
+                )
+            }
+        )
     }
 
     private fun launchStreamRequest(
@@ -276,7 +338,7 @@ internal class ChatRepository(
 
     private fun onNewUserInput(
         event: Event.OnNewInput,
-        includeUserMessage: Boolean = true,
+        isTask: Boolean = true,
         header: String? = null,
     ) {
         val input = event.input
@@ -289,23 +351,27 @@ internal class ChatRepository(
                 input,
                 source = AssistantVH.MessageSource.USER
             )
-        launchStreamRequest(
-            responseFlow = {
-                if (event.isTask) {
-                    askAnythingUseCase.executeTask(input, context)
-                } else {
+        if (event.isTask) {
+            launchAgentRequest(
+                responseFlow = { agent.executeTask(event.input, event.context) },
+                event,
+                userMessage
+            )
+        } else {
+            launchStreamRequest(
+                responseFlow = {
                     askAnythingUseCase.get(input, assistantHistory)
+                },
+                header = header,
+                triggerEvent = event,
+                persistedItem = userMessage.takeIf { isTask },
+                onCompletion = { response ->
+                    response?.askGoogle?.let {
+                        googleSearch(it, response.questionSummary, event, event.input)
+                    }
                 }
-            },
-            header = header,
-            triggerEvent = event,
-            persistedItem = userMessage.takeIf { includeUserMessage },
-            onCompletion = { response ->
-                response?.askGoogle?.let {
-                    googleSearch(it, response.questionSummary, event, event.input)
-                }
-            }
-        )
+            )
+        }
     }
 
     /**
@@ -445,4 +511,7 @@ internal class ChatRepository(
 class StopGenerationException : CancellationException()
 object StopSessionException : CancellationException()
 
-private data class ResponseStateSnapshot(val tempBuffer: String, val response: StructuredChatResponse?)
+private data class ResponseStateSnapshot(
+    val tempBuffer: String,
+    val response: StructuredChatResponse?
+)

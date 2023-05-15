@@ -5,7 +5,7 @@ import com.darh.jarvisapp.accessibility.ScreenInteractionService
 import com.darh.jarvisapp.api.CompletionState
 import com.darh.jarvisapp.api.OPEN_AI
 import com.darh.jarvisapp.api.StructuredChatResponse
-import com.darh.jarvisapp.chat.CompletionRemoteDataSource
+import com.darh.jarvisapp.chat.ChatCompletionRemoteDataSource
 import com.darh.jarvisapp.ui.ChatMessage
 import com.darh.jarvisapp.ui.ChatRole
 import kotlinx.coroutines.flow.Flow
@@ -14,7 +14,7 @@ import timber.log.Timber
 import javax.inject.Inject
 
 internal class AskAnythingUseCase @Inject constructor(
-    private val dataSource: CompletionRemoteDataSource,
+    private val dataSource: ChatCompletionRemoteDataSource,
     private val structureFormatter: CompletionRequestFormatter
 ) {
 
@@ -26,12 +26,11 @@ internal class AskAnythingUseCase @Inject constructor(
 //        connectionData.requireNetwork("AskAnythingUseCase")
         assistantHistory.add(ChatMessage(ChatRole.User, userInput))
 
-        val requestFormat = RequestFormat.EnhancedChat(assistantHistory.messages,)
+        val requestedFields = listOf(StructuredChatResponse.PROMPT_FIELD, StructuredChatResponse.NEXT_ACTION_FIELD)
+        val requestFormat = RequestFormat.EnhancedChat(assistantHistory.messages, requestedFields)
         return dataSource.getCompletionsStream(
             messages = structureFormatter.format(requestFormat),
-            requestedFields = listOf(
-                StructuredChatResponse.NEXT_ACTION_FIELD
-            )
+            requestedFields = requestedFields
         ) {}
     }
 

@@ -14,7 +14,11 @@ data class StructuredChatResponse(
     @SerializedName(ASK_GOOGLE_FIELD)
     val askGoogle: String? = null,
     @SerializedName(QUESTION_SUMMARY_FIELD)
-    val questionSummary: String? = null
+    val questionSummary: String? = null,
+    @SerializedName(StructuredAgentResponse.THOUGHT_FIELD)
+    val thought: String? = null,
+    @SerializedName(StructuredAgentResponse.NEXT_TOOL_FIELD)
+    val nextTool: String? = null,
 ) {
 
     companion object {

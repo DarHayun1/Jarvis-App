@@ -75,14 +75,14 @@ class ChatFragment : Fragment() {
     private fun setupInputBar() {
         binding.sendButton.setOnClickListener {
             val message = binding.messageInput.query.toString()
-            viewModel.obtainEvent(AssistantVM.Event.OnNewInput(message))
+            viewModel.obtainEvent(AssistantVM.Event.OnNewInput(message,))
             binding.messageInput.setQuery("", false)
             binding.messageInput.clearFocus()
         }
 
         binding.googleButton.setOnClickListener {
             val message = binding.messageInput.query.toString()
-            viewModel.obtainEvent(AssistantVM.Event.OnNewInput(message, isTask = true))
+            viewModel.obtainEvent(AssistantVM.Event.OnNewInput(message, isTask = true, context = requireContext()))
             binding.messageInput.setQuery("", false)
             binding.messageInput.clearFocus()
         }
@@ -123,7 +123,7 @@ class ChatFragment : Fragment() {
             Snackbar.LENGTH_SHORT
         ).setAction("Try again"){
             val event = errorItem.tryAgainEvent
-                ?: AssistantVM.Event.OnNewInput("Try again")
+                ?: AssistantVM.Event.OnNewInput("Try again",)
             viewModel.obtainEvent(event)
         }.show()
     }

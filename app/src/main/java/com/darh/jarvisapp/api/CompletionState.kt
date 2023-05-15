@@ -2,7 +2,7 @@ package com.darh.jarvisapp.api
 
 import com.darh.jarvisapp.unescapeSpecialChars
 
-sealed class CompletionState {
+sealed class  CompletionState {
     data class Typing(val content: String) : CompletionState()
     data class Metadata(val fields: Map<String, Any>, val requested: List<String>) :
         CompletionState() {

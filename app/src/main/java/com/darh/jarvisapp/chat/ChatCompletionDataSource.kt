@@ -14,7 +14,7 @@ import javax.inject.Singleton
 import kotlin.time.Duration.Companion.milliseconds
 
 @Singleton
-class CompletionRemoteDataSource @Inject constructor(
+class ChatCompletionRemoteDataSource @Inject constructor(
     private val chatCompletionAPI: ChatCompletionAPI,
     private val structuredCompletionsMapper: StructuredCompletionsMapper,
     private val appScope: AppScope
@@ -40,22 +40,19 @@ class CompletionRemoteDataSource @Inject constructor(
 
     @Throws(Exception::class)
     suspend fun getCompletionStructured(
-        messages: List<ChatMessage>,
-        requestedFields: List<String>
+        messages: List<ChatMessage>
     ): AssistantResponse {
-        Timber.tag(OPEN_AI).d("getCompletion $messages")
         val result = runCatching {
             chatCompletionAPI.getCompletion(
                 model = GPT_3_5_TURBO_MODEL,
-                messages = messages.injectStructured(requestedFields)
+                messages = messages
             )
         }
-        Timber.tag(OPEN_AI).d("getCompletion $result")
 
         val rawResponse = result.getOrNull()
         return rawResponse?.let {
             //log response
-            Timber.tag(OPEN_AI).d("getCompletion $messages")
+            Timber.tag(OPEN_AI).d("getCompletion result $rawResponse")
             AssistantResponse(
                 rawResponse,
                 Gson().fromJson(
@@ -77,7 +74,7 @@ class CompletionRemoteDataSource @Inject constructor(
             val requestFlow = structuredCompletionsMapper.mapToState(
                 chunksFlow = chatCompletionAPI.getCompletions(
                     model = GPT_3_5_TURBO_MODEL,
-                    messages = messages.injectStructured(requestedFields)
+                    messages = messages
                 ),
                 requestedFields = requestedFields
             )

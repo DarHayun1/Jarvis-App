@@ -1,48 +1,49 @@
 package com.darh.jarvisapp.chat
 
-import android.content.Context
-import com.darh.jarvisapp.accessibility.ScreenInteractionService
+import com.darh.jarvisapp.api.AssistantResponse
 import com.darh.jarvisapp.api.CompletionState
 import com.darh.jarvisapp.api.OPEN_AI
+import com.darh.jarvisapp.api.StructuredAgentResponse
 import com.darh.jarvisapp.api.StructuredChatResponse
+import com.darh.jarvisapp.chat.repo.CompletionRequestFormatter
+import com.darh.jarvisapp.chat.repo.RequestFormat
 import com.darh.jarvisapp.ui.ChatMessage
-import com.darh.jarvisapp.ui.ChatRole
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import timber.log.Timber
 import javax.inject.Inject
 
 internal class AgentUseCase @Inject constructor(
-    private val dataSource: CompletionRemoteDataSource,
+    private val dataSource: ChatCompletionRemoteDataSource,
+    private val formatter: CompletionRequestFormatter
 ) {
 
     fun get(
         userInput: String,
-        assistantHistory: ChatHistory,
     ): Flow<CompletionState> {
         Timber.tag(OPEN_AI).d("get AskAnythingUseCase")
 //        connectionData.requireNetwork("AskAnythingUseCase")
-        assistantHistory.add(ChatMessage(ChatRole.User, userInput))
-
+//        assistantHistory.add(ChatMessage(ChatRole.User, userInput))
+        val messages = formatter.format(RequestFormat.ThoughtsAgent(emptyList(), userInput))
         return dataSource.getCompletionsStream(
-            messages = assistantHistory.messages,
+            messages = messages,
             requestedFields = listOf(
-                StructuredChatResponse.NEXT_ACTION_FIELD
+                StructuredAgentResponse.THOUGHT_FIELD,
+                StructuredAgentResponse.NEXT_TOOL_FIELD
             )
         ) {}
     }
 
-    suspend fun executeTask(
-        input: String,
-        context: Context,
-    ): Flow<CompletionState> {
-        Timber.tag(OPEN_AI).d("executeTask AskAnythingUseCase input: $input")
+    suspend fun provideToolResult(
+        history: List<ChatMessage>,
+        originalTask: String
+    ): StructuredChatResponse? {
+        Timber.tag(OPEN_AI).d("get AskAnythingUseCase")
 //        connectionData.requireNetwork("AskAnythingUseCase")
-        ScreenInteractionService.getInstance()?.mapElementsToString()
-        context.packageManager.getLaunchIntentForPackage( "com.whatsapp")?.let {
-            context.startActivity(it)
-        }
-        return flow { emit(CompletionState.Complete("response", StructuredChatResponse("done"))) }
+//        assistantHistory.add(ChatMessage(ChatRole.User, userInput))
+        val messages = formatter.format(RequestFormat.ThoughtsAgent(history, originalTask))
+        return dataSource.getCompletionStructured(
+            messages = messages
+        ).structured
     }
 
 //    fun getEnhancedAnswer(

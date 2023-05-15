@@ -21,9 +21,9 @@ class StructuredCompletionsMapper @Inject constructor() {
         var stringBuffer = ""
         val jsonElementsReader = JsonElementsReader()
         return chunksFlow
-//            .onEach { Timber.tag(OPEN_AI).v("chunk: $it") }
-            .detectAndCombine(SEPARATOR, requestedFields.firstOrNull())
-//            .onEach { Timber.tag(OPEN_AI).v("chunk (post): $it") }
+            .onEach { Timber.tag(OPEN_AI).v("chunk: $it") }
+            .detectAndCombine(SEPARATOR, requestedFields)
+            .onEach { Timber.tag(OPEN_AI).v("chunk (post): $it") }
             .detectAndCombineSpecialChars()
             .detectAndCombineBoldTags()
             .mapNotNull {
@@ -71,14 +71,14 @@ class StructuredCompletionsMapper @Inject constructor() {
  */
 private fun Flow<String>.detectAndCombine(
     separatorSequence: String,
-    nextField: String?
+    fields: List<String>
 ): Flow<String> =
     channelFlow {
 
         var buffer = ""
         var promptStarted = false
         var promptEnded = false
-        val promptSeq = "\"prompt\": \""
+        val promptSeq = "\"${fields.firstOrNull()}\": \""
 
         this@detectAndCombine.mapNotNull { it }.collect { chunk ->
 
@@ -108,7 +108,7 @@ private fun Flow<String>.detectAndCombine(
                             send(buffer.substring(0, index))
                             buffer = buffer.substring(index)
                         }
-                        val endOfPromptSequence = nextField?.let { "\"$it\":" } ?: "\"}"
+                        val endOfPromptSequence = fields.getOrNull(1)?.let { "\"$it\":" } ?: "\"}"
                         if (buffer.replace("\n", "").contains(endOfPromptSequence)) {
                             // We found the start of the next json field
                             send(separatorSequence)
@@ -117,7 +117,7 @@ private fun Flow<String>.detectAndCombine(
                             buffer = ""
                         } else {
 //                            Timber.tag(OPEN_AI).d("nextField: [$nextField], buffer: [$buffer], filtered: [${buffer.filter { it.isLetter() }}]")
-                            if (nextField?.letters()?.contains(buffer.letters()) == false) {
+                            if (fields.getOrNull(1)?.letters()?.contains(buffer.letters()) == false) {
                                 // the buffer contains letter that are not the next json field. clear buffer.
                                 send(buffer)
                                 buffer = ""
