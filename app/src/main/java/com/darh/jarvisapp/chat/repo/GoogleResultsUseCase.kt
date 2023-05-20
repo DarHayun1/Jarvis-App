@@ -66,7 +66,7 @@ internal class GoogleResultsUseCase @Inject constructor(
         Timber.tag(OPEN_AI).d("GoogleResultsUseCase getInfo: $question")
 
         val queries = generateGoogleQueries(question)
-        val googleResults = searchGoogle(queries)
+        val googleResults = queries.firstOrNull()?.let { searchGoogle(it) }
         val resultsText = StringBuffer()
         googleResults?.forEachIndexed { index, result ->
             resultsText.append(result.toStringI(index))
@@ -114,22 +114,20 @@ internal class GoogleResultsUseCase @Inject constructor(
             .map { it.removeSurrounding(" ").removeSurrounding("\"") }
     }
 
-    private suspend fun searchGoogle(queries: List<String>): List<SearchResultResponse.SearchResult>? {
-        queries.forEach {query ->
-            val items = runCatching {
-                Timber.tag(OPEN_AI).d("Google search query: $query")
+    private suspend fun searchGoogle(query: String): List<SearchResultResponse.SearchResult>? {
+        val items = runCatching {
+            Timber.tag(OPEN_AI).d("Google search query: $query")
 
-                val result = googleRepository.search(
-                    query,
-                    BuildConfig.GOOGLE_SEARCH_KEY,
-                    BuildConfig.GOOGLE_ENGINE_KEY
-                )
-                Timber.tag(OPEN_AI).i("Google search result: $result")
-                result
-            }.getOrNull()?.items
-            if (!items.isNullOrEmpty()) {
-                return items
-            }
+            val result = googleRepository.search(
+                query,
+                BuildConfig.GOOGLE_SEARCH_KEY,
+                BuildConfig.GOOGLE_ENGINE_KEY
+            )
+            Timber.tag(OPEN_AI).i("Google search result: $result")
+            result
+        }.getOrNull()?.items
+        if (!items.isNullOrEmpty()) {
+            return items
         }
         return null
     }
